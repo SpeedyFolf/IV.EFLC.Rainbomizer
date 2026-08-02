@@ -84,15 +84,21 @@ class MissionRandomizer
     static void
     InitialiseStoredSeed ()
     {
+        auto &config = ConfigManager::GetConfigs ().missions;
         uint32_t seed = CNativeManager::CallNativeRet<uint32_t> (
             "GET_FLOAT_STAT", GetMissionRandomizerSeedStatId ());
 
-        if (seed == mCurrentMissionSeed && seed != 0)
-            return;
-
-        if (seed == 0)
+        if (config.forceSeed && config.seed != -1)
             {
-                seed = RandomUInt (UINT_MAX);
+                seed = config.seed;
+            }
+        else if (seed == 0)
+            {
+                if (config.seed != -1)
+                    seed = config.seed;
+                else
+                    seed = RandomUInt (UINT_MAX);
+
                 CNativeManager::CallNative ("SET_FLOAT_STAT",
                                             GetMissionRandomizerSeedStatId (),
                                             seed);
@@ -100,6 +106,9 @@ class MissionRandomizer
         else
             Rainbomizer::Logger::LogMessage ("Seeding from save file: %u",
                                              seed);
+
+        if (seed == mCurrentMissionSeed && seed != 0)
+            return;
 
         InitialiseMissionsMap (seed);
     }
